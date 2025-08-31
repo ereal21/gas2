@@ -2,7 +2,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from bot.database.models import Permission
 
 from bot.localization import t
-from bot.database.methods import get_category_parent
+from bot.database.methods import get_category_parent, select_item_values_amount
 from bot.utils import display_name
 
 
@@ -133,6 +133,7 @@ def console(role: int) -> InlineKeyboardMarkup:
     if role == assistant_role:
         inline_keyboard = [
             [InlineKeyboardButton('🖼 Assign photos', callback_data='assign_photos')],
+            [InlineKeyboardButton('❓ Help', callback_data='admin_help')],
             [InlineKeyboardButton('🔙 Back to menu', callback_data='back_to_menu')]
         ]
         return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
@@ -143,7 +144,9 @@ def console(role: int) -> InlineKeyboardMarkup:
         [InlineKeyboardButton('📢 Pranešimų siuntimas', callback_data='send_message')],
     ]
     if role & Permission.OWN:
+        inline_keyboard.insert(0, [InlineKeyboardButton('📦 View Stock', callback_data='view_stock')])
         inline_keyboard.insert(0, [InlineKeyboardButton('🛠 Assign assistants', callback_data='assistant_management')])
+    inline_keyboard.append([InlineKeyboardButton('❓ Help', callback_data='admin_help')])
     inline_keyboard.append([InlineKeyboardButton('🔙 Back to menu', callback_data='back_to_menu')])
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
 
@@ -274,6 +277,51 @@ def promo_manage_actions(code: str) -> InlineKeyboardMarkup:
         [InlineKeyboardButton('⏰ Change expiry', callback_data=f'promo_manage_expiry_{code}')],
         [InlineKeyboardButton('🗑️ Delete', callback_data=f'promo_manage_delete_{code}')],
         [InlineKeyboardButton('🔙 Go back', callback_data='manage_promo')],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
+def stock_categories_list(list_items: list[str], parent: str | None) -> InlineKeyboardMarkup:
+    """List categories or subcategories for stock view."""
+    markup = InlineKeyboardMarkup()
+    for name in list_items:
+        markup.add(InlineKeyboardButton(text=name, callback_data=f'stock_cat:{name}'))
+    back_data = 'console' if parent is None else f'stock_cat:{parent}'
+    markup.add(InlineKeyboardButton('🔙 Go back', callback_data=back_data))
+    return markup
+
+
+def stock_goods_list(list_items: list[str], category_name: str) -> InlineKeyboardMarkup:
+    """Show goods with stock counts for a category."""
+    markup = InlineKeyboardMarkup()
+    for name in list_items:
+        amount = select_item_values_amount(name)
+        markup.add(InlineKeyboardButton(
+            text=f'{display_name(name)} ({amount})',
+            callback_data=f'stock_item:{name}:{category_name}'
+        ))
+    parent = get_category_parent(category_name)
+    back_data = 'console' if parent is None else f'stock_cat:{parent}'
+    markup.add(InlineKeyboardButton('🔙 Go back', callback_data=back_data))
+    return markup
+
+
+def stock_values_list(values, item_name: str, category_name: str) -> InlineKeyboardMarkup:
+    """List individual stock entries for an item."""
+    markup = InlineKeyboardMarkup()
+    for val in values:
+        markup.add(InlineKeyboardButton(
+            text=f'ID {val.id}',
+            callback_data=f'stock_val:{val.id}:{item_name}:{category_name}'
+        ))
+    markup.add(InlineKeyboardButton('🔙 Go back', callback_data=f'stock_item:{item_name}:{category_name}'))
+    return markup
+
+
+def stock_value_actions(value_id: int, item_name: str, category_name: str) -> InlineKeyboardMarkup:
+    inline_keyboard = [
+        [InlineKeyboardButton('🗑 Delete', callback_data=f'stock_del:{value_id}:{item_name}:{category_name}')],
+        [InlineKeyboardButton('🔙 Go back', callback_data=f'stock_item:{item_name}:{category_name}')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
 
