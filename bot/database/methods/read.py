@@ -162,6 +162,15 @@ def get_item_value(item_name: str) -> dict | None:
     return result.__dict__ if result else None
 
 
+def get_item_values(item_name: str):
+    return Database().session.query(ItemValues).filter(ItemValues.item_name == item_name).all()
+
+
+def get_item_value_by_id(value_id: int) -> dict | None:
+    result = Database().session.query(ItemValues).filter(ItemValues.id == value_id).first()
+    return result.__dict__ if result else None
+
+
 def select_item_values_amount(item_name: str) -> int:
     return Database().session.query(func.count()).filter(ItemValues.item_name == item_name).scalar()
 

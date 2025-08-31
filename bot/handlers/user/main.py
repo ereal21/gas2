@@ -1166,7 +1166,8 @@ def register_user_handlers(dp: Dispatcher):
     dp.register_callback_query_handler(bought_items_callback_handler,
                                        lambda c: c.data == 'bought_items')
     dp.register_callback_query_handler(back_to_menu_callback_handler,
-                                       lambda c: c.data == 'back_to_menu')
+                                       lambda c: c.data == 'back_to_menu',
+                                       state='*')
     dp.register_callback_query_handler(close_callback_handler,
                                        lambda c: c.data == 'close')
     dp.register_callback_query_handler(change_language,
